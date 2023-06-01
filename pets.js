@@ -9,12 +9,12 @@ function displayError(){
 
 function readPets(index){
     try {
-        let pets = JSON.parse(fileData)
+        
         index === undefined 
-        ? console.log(pets) 
-        : index > pets.length || index < 0
+        ? console.log(fileData) 
+        : index > fileData.length || index < 0
         ? console.error('Usage: read pets.js INDEX')
-        : console.log(pets[index])
+        : console.log(fileData[index])
     } catch (error){
         throw error;
     }
