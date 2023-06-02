@@ -2,14 +2,15 @@ let fs = require('fs')
 let filePath = `pets.json`;
 let fileData = JSON.parse(fs.readFileSync(filePath, 'utf-8'))
 
+// logs an error if there's no command beyond running the file, then exits process
 function displayError(){
     console.error('Usage: [read | create | update | destroy]');
     process.exit(1);
-}
+} 
 
+// try catch block with a nested ternary that logs the file data from pets.json to the console based on subcommand
 function readPets(index){
     try {
-        
         index === undefined 
         ? console.log(fileData) 
         : index > fileData.length || index < 0
@@ -20,6 +21,7 @@ function readPets(index){
     }
 }
 
+// creates a pet object, then pushes it into the file data from pets.json and logs the new creation 
 function createPet(age, kind, name) {
     let index = process.argv.length
     let newPet = {age: Number(age), kind: kind, name: name}
@@ -29,6 +31,7 @@ function createPet(age, kind, name) {
     })
 }
 
+// removes the pet data from pets.json at the desired index 
 function destroyPet(petIndex) {
     try {
       const fileData = fs.readFileSync(filePath, 'utf8');
@@ -45,6 +48,7 @@ function destroyPet(petIndex) {
     }
   }
 
+// switch cases for the different subcommands when running the file. Establishes the required arguments for each case.
 function runCommand(){
     let command = process.argv[2];
     
