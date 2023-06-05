@@ -11,17 +11,19 @@ petShopApp.use(express.urlencoded({ extended: false}))
 
 petShopApp.get('/pets', (req, res) => {
     fs.readFile(petsPath, (err, data) => {
-        err ? console.error : res.send(data)
+        err ? console.error : res.status(200).send(JSON.parse(data))
     })
 })
 
 petShopApp.get('/pets/:id', (req, res) => {
     let id = req.params.id
     fs.readFile(petsPath, (err, data) => {
+        let parsedData = JSON.parse(data)
         if (err) {
             console.error(err)
+        } else if (id < 0 || id > parsedData.length) {
+            res.status(404).send('Not found')
         } else {
-            let parsedData = JSON.parse(data)
             let parsedResponse = parsedData[id]
             res.status(200).send(parsedResponse)
         }
