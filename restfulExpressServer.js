@@ -58,8 +58,65 @@ petShopApp.post('/pets', (req, res) => {
 })
 
 
+petShopApp.patch('/pets/:id', (req, res) => {
+    fs.readFile(petsPath, (err, data) => {
+        const petData = JSON.parse(data)
+        if (err) {
+            throw err
+        } else {
+            const newPet = req.body
+            const id = req.params.id
+            if (newPet.age && newPet.kind && newPet.name) {
+                petData[id].age = newPet.age
+                petData[id].kind = newPet.kind
+                petData[id].name = newPet.name
+            } else if (newPet.kind && newPet.age) {
+                petData[id].kind = newPet.kind
+                petData[id].age = newPet.age
+            } else if (newPet.name && newPet.kind) {
+                petData[id].name = newPet.name
+                petData[id].kind = newPet.kind
+            } else if (newPet.age && newPet.name) {
+                petData[id].age = newPet.age
+                petData[id].name = newPet.name
+            } else if (newPet.age) { 
+                petData[id].age = newPet.age
+            } else if (newPet.kind) {
+                petData[id].kind = newPet.kind
+            } else if (newPet.name) {
+                petData[id].name = newPet.name
+            } else if (newPet = {}) {
+                res.status(400).send('Forgot data, you silly goose')
+            } else {
+                res.status(400).send('IDEK what you\'re trying to do here')
+            }
+            fs.writeFile(petsPath, JSON.stringify(petData), (err) => {
+                err ? console.error(err) : res.send(petData)
+            })
+        } 
+    }) 
+})
 
 
+petShopApp.delete('/pets/:id', (req, res) => {
+    fs.readFile(petsPath, (err, data) => {
+        let petData = JSON.parse(data)
+        if (err) {
+            console.error(err) 
+        } else {
+            const id = req.params.id
+            let formerPet = petData[id]
+            petData.splice(formerPet, 1)
+            fs.writeFile(petsPath, JSON.stringify(petData), (err) => {
+                if (err) {
+                    console.error(err)
+                } else {
+                    res.status(200).send('Pet is gone now.')
+                }
+            })
+        }
+    })
+})
 
 
 petShopApp.listen(port, () => {
