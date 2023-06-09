@@ -6,53 +6,44 @@ const port = 10000
 petShopApp.use(express.urlencoded({ extended: false}))
 const petsPath = path.join(__dirname, 'pets.json')
 petShopApp.use(express.json())
+const Pool  = require('pg').Pool
 
+
+
+const pool = new Pool({
+    user: 'benja',
+    host: 'localhost',
+    database: 'petshop',
+    password: 'OASDIA',
+    port: 5432
+}) 
 
 petShopApp.get('/:id', (req, res) => {
     let id = req.params.id
     if (id === 'pets/' || id === 'pets') {
-        fs.readFile(petsPath, (err, data) => {
-            err ? console.error(err) : res.status(200).send(JSON.parse(data))
-        })
-    } else {
-        res.status(404).send('Not found')
-    }
+    pool.query('SELECT * FROM pets', (err, data) => {
+        if (err) {
+            console.error(err)
+        } 
+        res.status(200).json(data.rows)
+    })
+} else {
+    res.status(404).send('Not Found')
+}
 })
 
 
 petShopApp.get('/pets/:id', (req, res) => {
-    fs.readFile(petsPath, (err, data) => {
-        const id = req.params.id
-        const petData = JSON.parse(data)
+    const id = parseInt(req.params.id)
+    pool.query('SELECT * FROM pets WHERE id = $1', [id], (err, data) => {
         if (err) {
             console.error(err)
-        } else if (id >= 0 && id <= petData.length - 1) {
-            res.status(200).send(petData[id])
-        } else {
+            res.status(500).send('Internal server error')
+        } else if (data.rows.length === 0) {
             res.status(400).send('Bad request, try again, fool')
-        }
-    })
-})
-
-
-petShopApp.post('/pets', (req, res) => {
-    fs.readFile(petsPath, (err, data) => {
-        if (err) {
-            console.error(err) 
         } else {
-            const petData = JSON.parse(data) 
-            if (typeof req.body === 'object') {
-                petData.push(req.body)
-                fs.writeFile(petsPath, JSON.stringify(petData), (err) => {
-                    if (err) {
-                        console.error(err)
-                    } else {
-                        res.status(200).send(petData)
-                    } 
-                })
-            } else {
-                res.status(400).send('Nice try, use an object next time')
-            }
+           const resource = data.rows[0]
+           res.status(200).send(resource)
         }
     })
 })
@@ -71,6 +62,7 @@ petShopApp.patch('/pets/:id', (req, res) => {
                     if (newPet[key]) {
                         petData[id][key] = newPet[key]
                     }
+                    
                 }
                 fs.writeFile(petsPath, JSON.stringify(petData), (err) => {
                     err ? console.error(err) : res.status(200).send(petData)
@@ -112,3 +104,5 @@ petShopApp.use((req, res) => {
 petShopApp.listen(port, () => {
     console.log('Server\'s up on', port)
 })
+
+
