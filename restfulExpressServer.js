@@ -7,6 +7,7 @@ petShopApp.use(express.urlencoded({ extended: false}))
 const petsPath = path.join(__dirname, 'pets.json')
 petShopApp.use(express.json())
 
+
 petShopApp.get('/:id', (req, res) => {
     let id = req.params.id
     if (id === 'pets/' || id === 'pets') {
@@ -17,6 +18,7 @@ petShopApp.get('/:id', (req, res) => {
         res.status(404).send('Not found')
     }
 })
+
 
 petShopApp.get('/pets/:id', (req, res) => {
     fs.readFile(petsPath, (err, data) => {
@@ -31,6 +33,7 @@ petShopApp.get('/pets/:id', (req, res) => {
         }
     })
 })
+
 
 petShopApp.post('/pets', (req, res) => {
     fs.readFile(petsPath, (err, data) => {
@@ -54,6 +57,7 @@ petShopApp.post('/pets', (req, res) => {
     })
 })
 
+
 petShopApp.patch('/pets/:id', (req, res) => {
     fs.readFile(petsPath, (err, data) => {
         let petData = JSON.parse(data)
@@ -67,7 +71,6 @@ petShopApp.patch('/pets/:id', (req, res) => {
                     if (newPet[key]) {
                         petData[id][key] = newPet[key]
                     }
-                    
                 }
                 fs.writeFile(petsPath, JSON.stringify(petData), (err) => {
                     err ? console.error(err) : res.status(200).send(petData)
@@ -78,6 +81,7 @@ petShopApp.patch('/pets/:id', (req, res) => {
         } 
     }) 
 })
+
 
 petShopApp.delete('/pets/:id', (req, res) => {
     fs.readFile(petsPath, (err, data) => {
@@ -99,9 +103,11 @@ petShopApp.delete('/pets/:id', (req, res) => {
     })
 })
 
+
 petShopApp.use((req, res) => {
     res.status(404).send('Not found')
 })
+
 
 petShopApp.listen(port, () => {
     console.log('Server\'s up on', port)
