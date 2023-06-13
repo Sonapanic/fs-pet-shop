@@ -11,12 +11,13 @@ const Pool  = require('pg').Pool
 
 
 const pool = new Pool({
-    user: 'benja',
+    user: 'postgres',
     host: 'localhost',
     database: 'petshop',
-    password: 'OASDIA',
+    password: 'a',
     port: 5432
 }) 
+
 
 petShopApp.get('/:id', (req, res) => {
     let id = req.params.id
@@ -49,51 +50,90 @@ petShopApp.get('/pets/:id', (req, res) => {
 })
 
 
-petShopApp.patch('/pets/:id', (req, res) => {
-    fs.readFile(petsPath, (err, data) => {
-        let petData = JSON.parse(data)
-        if (err) {
-            console.error(err)
-        } else {
-            let newPet = req.body
-            let id = req.params.id
-            if (newPet.age || newPet.kind || newPet.name) {
-                for (let key in petData[id]) {
-                    if (newPet[key]) {
-                        petData[id][key] = newPet[key]
-                    }
-                    
-                }
-                fs.writeFile(petsPath, JSON.stringify(petData), (err) => {
-                    err ? console.error(err) : res.status(200).send(petData)
-                })
+petShopApp.post('/pets', (req, res) => {
+    const { age, kind, name } = req.body
+    if (age && kind && name) {
+        pool.query('INSERT INTO pets (age, kind, name) VALUES ($1, $2, $3)', [age, kind, name], (err, data) => {
+            if (err) {
+                console.error(err)
+                res.status(500)
             } else {
-                res.status(400).send('Bad request')
+                res.status(201).send(`Your pet is here.`)
             }
-        } 
-    }) 
+        })
+    } else {
+        res.status(400).send('Awful request')
+    }
 })
 
 
-petShopApp.delete('/pets/:id', (req, res) => {
-    fs.readFile(petsPath, (err, data) => {
-        let petData = JSON.parse(data)
-        if (err) {
-            console.error(err) 
-        } else {
-            const id = req.params.id
-            let formerPet = petData[id]
-            petData.splice(formerPet, 1)
-            fs.writeFile(petsPath, JSON.stringify(petData), (err) => {
-                if (err) {
-                    console.error(err)
-                } else {
-                    res.status(200).send('Pet is gone now.')
-                }
-            })
+
+petShopApp.put('/pets/:id', async (req, res) => {
+    const { id } = req.params
+    const { age, kind, name } = req.body
+    if (age && kind && name) {
+        try {
+        let result = await pool.query('UPDATE pets SET age = $1, kind = $2, name = $3 WHERE id = $4 RETURNING *', [age, kind, name, id]) 
+            if (result.rowCount === 0) {
+                res.status(404).send('Pet not found')
+            } else {
+                res.json(result.rows[0])
+            }
+        } catch (err) {
+            console.error
+            res.status(500).send('Internal Server Error')
         }
-    })
+    } else {
+        res.status(400).send('Please include all fields')
+    }
 })
+
+
+petShopApp.patch('/pets/:id', async (req, res) => {
+    // destructuring the id and defining the request body as variable updates
+    const { id } = req.params
+    const updates = req.body
+    // try catch block for async await syntax
+    try {
+        let query = 'UPDATE pets SET ' // defining base query string, to be updated later 
+        const values = [] // defining empty array for later values
+        Object.keys(updates).forEach((column, index) => { // calling a function on each element of the newly created array of keys from the request body (updates)
+            query += `${column} = $${index + 1}, ` // adding the column name and index to the query string, solved for a 1 indexed database
+            values.push(updates[column]) // pushing the column key into the values array
+        })
+
+        query = query.slice(0, -2) // slicing off the trailing comma and space
+        query += ` WHERE id = $${Object.keys(updates).length + 1} RETURNING *` // adding the WHERE clause with the id being equal to the last index of the newly generated updates array
+        values.push(id) // pushing the id into the values array
+
+        const result = await pool.query(query, values) // setting up the pool query with the finalized query string and values array
+        if (result.rowCount === 0) { // if there aren't any rows at the result, send a 404
+            res.status(404).send('Pet not found')
+        } else {
+            res.json(result.rows[0]) // otherwise, send the updated pet data
+        }
+    } catch (err) { // if an error is caught, send a 500 status and log the error
+        console.error(err)
+        res.status(500).send('Internal Server Error')
+    }
+})
+
+
+petShopApp.delete('/pets/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+      const result = await pool.query('DELETE FROM pets WHERE id = $1', [id]);
+      if (result.rowCount === 0) {
+        res.status(404).send('Pet not found');
+      } else {
+        res.json(result.rows[0]);
+      }
+    } catch (err) {
+      console.error(err);
+      res.status(500).send('Internal Server Error');
+    }
+  });
+      
 
 
 petShopApp.use((req, res) => {
